@@ -414,20 +414,28 @@ def write_png(out, frame, frame_png):
 
 def write_cur(out, frame, frame_png):
     pixels = frame_png.load()
+    print("MODE", frame_png.mode)
 
     out.write(p("<I II HH IIIIII", 40, frame[0], frame[0] * 2, 1, 32, 0, 0, 0, 0, 0, 0))
 
     for y in reversed(range(frame[0])):
         for x in range(frame[0]):
             pixel = pixels[x, y]
-            out.write(p("<BBBB", pixel[2], pixel[1], pixel[0], pixel[3]))
+            
+            # When png mode is LA (grey scale and alpha value), do (greyVal, greyVal, greyVal, alphaVal)
+            if len(pixel) == 2:
+                out.write(p("<BBBB", pixel[0], pixel[0], pixel[0], pixel[1]))
+            else:
+                out.write(p("<BBBB", pixel[2], pixel[1], pixel[0], pixel[3]))
 
     acc = 0
     acc_pos = 0
     for y in reversed(range(frame[0])):
         wrote = 0
         for x in range(frame[0]):
-            if pixels[x, y][3] <= 127:
+            # Might be int or tuple of less 4 (Not RGBA)
+            # if (pixels[x, y][3] <= 127):
+            if (not isinstance(pixels[x,y], tuple)) or (len(pixels[x, y]) < 4) or (pixels[x, y][3] <= 127):
                 acc = acc | (1 << acc_pos)
             acc_pos += 1
             if acc_pos == 8:
